@@ -80,27 +80,43 @@ app.get('/products', (req, res) => {
 
 // product by SKU
 app.get('/product/:sku', (req, res) => {
-    if(mongoConnected) {
+    if (mongoConnected) {
+
         // optionally slow this down
         const delay = process.env.GO_SLOW || 0;
+
         setTimeout(() => {
-        collection.findOne({sku: req.params.sku}).then((product) => {
-            req.log.info('product', product);
-            if(product) {
-                res.json(product);
-            } else {
-                res.status(404).send('SKU not found');
+
+            const sku = req.params.sku;
+
+            // ✅ ONLY THIS PRODUCT WILL FAIL
+            if (sku === "HPTD") {
+                console.log("Simulated 404 for product:", sku);
+                return res.status(404).send("404 - Product Not Found (Simulated)");
             }
-        }).catch((e) => {
-            req.log.error('ERROR', e);
-            res.status(500).send(e);
-        });
+
+            collection.findOne({ sku: sku }).then((product) => {
+                req.log.info('product', product);
+
+                if (product) {
+                    res.json(product);
+                } else {
+                    res.status(404).send('SKU not found');
+                }
+
+            }).catch((e) => {
+                req.log.error('ERROR', e);
+                res.status(500).send(e.message || e);
+            });
+
         }, delay);
+
     } else {
         req.log.error('database not available');
         res.status(500).send('database not available');
     }
 });
+
 
 // products in a category
 app.get('/products/:cat', (req, res) => {
