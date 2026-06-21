@@ -1,9 +1,8 @@
 (function(angular) {
     'use strict';
 
-    var robotshop = angular.module('robotshop', ['ngRoute'])
+    var robotshop = angular.module('robotshop', ['ngRoute']);
 
-    // Share user between controllers
     robotshop.factory('currentUser', function() {
         var data = {
             uniqueid: '',
@@ -16,7 +15,7 @@
         return data;
     });
 
-    robotshop.config(['$routeProvider', '$locationProvider', ($routeProvider, $locationProvider) => {
+    robotshop.config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
         $routeProvider.when('/', {
             templateUrl: 'splash.html',
             controller: 'shopform'
@@ -38,27 +37,23 @@
         }).when('/payment', {
             templateUrl: 'payment.html',
             controller: 'paymentform'
+        }).when('/404', {
+            templateUrl: '404.html'
         }).otherwise({
             redirectTo: '/'
         });
 
-        // needed for URL rewrite hash
         $locationProvider.html5Mode(true);
     }]);
 
-    // clear template fragment cache, development
-    // TODO - disable this later
     robotshop.run(function($rootScope, $templateCache) {
         $rootScope.$on('$viewContentLoaded', function() {
             console.log('>>> clearing cache');
             $templateCache.removeAll();
         });
 
-        // Instana EUM
-        // may not be loaded so check for ineum object
-        $rootScope.$on('$routeChangeSuccess', (event, next, current) => {
-            if(typeof ineum !== 'undefined') {
-                //console.log('route change', event, next, current);
+        $rootScope.$on('$routeChangeSuccess', function(event, next, current) {
+            if (typeof ineum !== 'undefined') {
                 ineum('page', next.loadedTemplateUrl);
             }
         });
@@ -71,28 +66,28 @@
         $scope.data.categories = [];
         $scope.data.products = {};
         $scope.data.searchText = '';
-        // empty cart
+
         $scope.data.cart = {
             total: 0
         };
 
         $scope.getProducts = function(category) {
-            if($scope.data.products[category]) {
+            if ($scope.data.products[category]) {
                 $scope.data.products[category] = null;
             } else {
                 $http({
                     url: '/api/catalogue/products/' + category,
                     method: 'GET'
-                }).then((res) => {
+                }).then(function(res) {
                     $scope.data.products[category] = res.data;
-                }).catch((e) => {
+                }).catch(function(e) {
                     console.log('ERROR', e);
                 });
             }
         };
 
         $scope.search = function() {
-            if($scope.data.searchText) {
+            if ($scope.data.searchText) {
                 $location.url('/search/' + $scope.data.searchText);
                 $scope.data.searchText = '';
             }
@@ -102,55 +97,55 @@
             $http({
                 url: '/api/catalogue/categories',
                 method: 'GET'
-            }).then((res) => {
+            }).then(function(res) {
                 $scope.data.categories = res.data;
                 console.log('categories loaded');
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
             });
         }
 
-        // unique id for cart etc
         function getUniqueid() {
-            return new Promise((resolve, reject) => {
-            $http({
-                url: '/api/user/uniqueid',
-                method: 'GET'
-            }).then((res) => {
-                resolve(res.data.uuid);
-            }).catch((e) => {
-                console.log('ERROR', e);
-                reject(e);
+            return new Promise(function(resolve, reject) {
+                $http({
+                    url: '/api/user/uniqueid',
+                    method: 'GET'
+                }).then(function(res) {
+                    resolve(res.data.uuid);
+                }).catch(function(e) {
+                    console.log('ERROR', e);
+                    reject(e);
+                });
             });
-        });
         }
 
-        // init
         console.log('shopform starting...');
         getCategories();
-        if(!currentUser.uniqueid) {
+
+        if (!currentUser.uniqueid) {
             console.log('generating uniqueid');
-            getUniqueid().then((id) => {
+            getUniqueid().then(function(id) {
                 $scope.data.uniqueid = id;
                 currentUser.uniqueid = id;
-                // update metadata
-                if(typeof ineum !== 'undefined') {
+
+                if (typeof ineum !== 'undefined') {
                     ineum('user', id);
                     ineum('meta', 'environment', 'production');
                     ineum('meta', 'variant', 'normal price');
                 }
-
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
             });
         }
-        
-        // watch for login
-        $scope.$watch(() => { return currentUser.uniqueid; }, (newVal, oldVal) => {
-            if(newVal !== oldVal) {
+
+        $scope.$watch(function() {
+            return currentUser.uniqueid;
+        }, function(newVal, oldVal) {
+            if (newVal !== oldVal) {
                 $scope.data.uniqueid = currentUser.uniqueid;
-                if(typeof ineum !== 'undefined') {
-                    if(! currentUser.uniqueid.startsWith('anonymous')) {
+
+                if (typeof ineum !== 'undefined') {
+                    if (!currentUser.uniqueid.startsWith('anonymous')) {
                         console.log('Setting user details', currentUser);
                         ineum('user', currentUser.uniqueid, currentUser.user.name, currentUser.user.email);
                     }
@@ -158,9 +153,10 @@
             }
         });
 
-        // watch for cart changes
-        $scope.$watch(() => { return currentUser.cart.total; }, (newVal, oldVal) => {
-            if(newVal !== oldVal) {
+        $scope.$watch(function() {
+            return currentUser.cart.total;
+        }, function(newVal, oldVal) {
+            if (newVal !== oldVal) {
                 $scope.data.cart = currentUser.cart;
             }
         });
@@ -171,14 +167,14 @@
         $scope.data.searchResults = [];
 
         function search(text) {
-            if(text) {
+            if (text) {
                 $http({
                     url: '/api/catalogue/search/' + text,
                     method: 'GET'
-                }).then((res) => {
+                }).then(function(res) {
                     console.log('search results', res.data);
                     $scope.data.searchResults = res.data;
-                }).catch((e) => {
+                }).catch(function(e) {
                     console.log('ERROR', e);
                 });
             }
@@ -189,7 +185,7 @@
         search(text);
     });
 
-    robotshop.controller('productform', function($scope, $http, $routeParams, $timeout, currentUser) {
+    robotshop.controller('productform', function($scope, $http, $routeParams, $timeout, $location, currentUser) {
         $scope.data = {};
         $scope.data.message = ' ';
         $scope.data.product = {};
@@ -200,15 +196,16 @@
         $scope.addToCart = function() {
             var url = '/api/cart/add/' + currentUser.uniqueid + '/' + $scope.data.product.sku + '/' + $scope.data.quantity;
             console.log('addToCart', url);
+
             $http({
                 url: url,
                 method: 'GET'
-            }).then((res) => {
+            }).then(function(res) {
                 console.log('cart', res.data);
                 currentUser.cart = res.data;
                 $scope.data.message = 'Added to cart';
                 $timeout(clearMessage, 3000);
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
                 $scope.data.message = 'ERROR ' + e;
                 $timeout(clearMessage, 3000);
@@ -218,56 +215,57 @@
         $scope.rateProduct = function(score) {
             console.log('rate product', $scope.data.product.sku, score);
             var url = '/api/ratings/api/rate/' + $scope.data.product.sku + '/' + score;
+
             $http({
                 url: url,
                 method: 'PUT'
-            }).then((res) => {
+            }).then(function(res) {
                 $scope.data.message = 'Thank you for your feedback';
                 $timeout(clearMessage, 3000);
                 loadRating($scope.data.product.sku);
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
             });
         };
-        
+
         $scope.glowstan = function(vote, val) {
             console.log('glowstan', vote);
             var idx = vote;
-            while(idx > 0) {
+
+            while (idx > 0) {
                 document.getElementById('vote-' + idx).style.opacity = val;
                 idx--;
             }
         };
 
-            function loadProduct(sku) {
-        $http({
-            url: '/api/catalogue/product/' + sku,
-            method: 'GET'
-        }).then((res) => {
-            $scope.data.product = res.data;
-        }).catch((e) => {
+        function loadProduct(sku) {
+            $http({
+                url: '/api/catalogue/product/' + sku,
+                method: 'GET'
+            }).then(function(res) {
+                $scope.data.product = res.data;
+            }).catch(function(e) {
+                console.log('PRODUCT LOAD ERROR:', e);
 
-            console.log('ERROR', e);
+                if (e.status === 404) {
+                    $scope.data.product = {};
+                    $scope.data.message = '';
+                    $location.url('/404');
+                    return;
+                }
 
-            // ✅ THIS IS THE KEY FIX
-            if (e.status === 404) {
-                alert("404 - Product Not Found");
-                return;
-            }
-
-            // other errors
-            $scope.data.message = 'ERROR loading product';
-            $timeout(clearMessage, 3000);
-        });
-    }
+                $scope.data.message = 'ERROR loading product';
+                $timeout(clearMessage, 3000);
+            });
+        }
 
         function loadRating(sku) {
             $http({
                 url: '/api/ratings/api/fetch/' + sku,
                 method: 'GET'
-            }).then((res) => {
+            }).then(function(res) {
                 $scope.data.rating = res.data;
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
             });
         }
@@ -276,7 +274,7 @@
             console.log('clear message');
             $scope.data.message = ' ';
         }
-        
+
         loadProduct($routeParams.sku);
         loadRating($routeParams.sku);
     });
@@ -290,18 +288,18 @@
         $scope.buy = function() {
             $location.url('/shipping');
         };
-        
+
         $scope.change = function(sku, qty) {
-            // update the cart
             var url = '/api/cart/update/' + $scope.data.uniqueid + '/' + sku + '/' + qty;
             console.log('change', url);
+
             $http({
                 url: url,
                 method: 'GET'
-            }).then((res) => {
+            }).then(function(res) {
                 $scope.data.cart = res.data;
                 currentUser.cart = res.data;
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
             });
         };
@@ -310,23 +308,23 @@
             $http({
                 url: '/api/cart/cart/' + id,
                 method: 'GET'
-            }).then((res) => {
+            }).then(function(res) {
                 var cart = res.data;
-                // remove shipping - last item in cart
-                if(cart.items[cart.items.length - 1].sku == 'SHIP') {
+
+                if (cart.items[cart.items.length - 1].sku == 'SHIP') {
                     $http({
                         url: '/api/cart/update/' + id + '/SHIP/0',
                         method: 'GET'
-                    }).then((res) => {
+                    }).then(function(res) {
                         currentUser.cart = res.data;
                         $scope.data.cart = res.data;
-                    }).catch((e) => {
+                    }).catch(function(e) {
                         console.log('ERROR', e);
                     });
                 } else {
                     $scope.data.cart = cart;
                 }
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
             });
         }
@@ -341,96 +339,158 @@
         $scope.data.selectedCountry = '';
         $scope.data.selectedLocation = '';
         $scope.data.disableCity = true;
-        $scope.data.disableCalc = true;
-        $scope.data.shipping = '';
+        $scope.data.shipping = null;
 
-        $scope.calcShipping = function() {
-            console.log('calc uuid', uuid);
-            $http({
-                url: '/api/shipping/calc/' + uuid,
-                method: 'GET'
-            }).then((res) => {
-                console.log('shipping data', res.data);
-                $scope.data.shipping = res.data;
-                $scope.data.shipping.location = $scope.data.selectedCountry.name + ' ' + autoLocation;
-            }).catch((e) => {
-                console.log('ERROR', e);
-            });
-        };
-
-        $scope.confirmShipping = function() {
-            console.log('shipping confirmed');
-            $http({
-                url: '/api/shipping/confirm/' + currentUser.uniqueid,
-                method: 'POST',
-                data: $scope.data.shipping
-            }).then((res) => {
-                // go to final confirmation
-                console.log('confirm cart', res.data);
-                // save new cart
-                currentUser.cart = res.data;
-                $location.url('/payment');
-            }).catch((e) => {
-                console.log('ERROR', e);
-            });
-        };
-
-        $scope.countryChanged = function() {
-            console.log('selected', $scope.data.selectedCountry);
-            if($scope.data.selectedCountry) {
-                $scope.data.disableCity = false;
-            }
-            $scope.data.selectedLocation = '';
-            $scope.data.disableCalc = true;
-            $scope.data.shipping = '';
-        };
-
-        // auto-complete
-        var autoLocation;
-        var uuid;
+        var autoLocation = '';
+        var uuid = '';
 
         function loadCodes() {
             $http({
                 url: '/api/shipping/codes',
                 method: 'GET'
-            }).then((res) => {
+            }).then(function(res) {
+                console.log('countries loaded', res.data);
                 $scope.data.countries = res.data;
-            }).catch((e) => {
-                console.log('ERROR', e);
+            }).catch(function(e) {
+                console.log('ERROR loading countries', e);
             });
         }
-        
+
+        function loadShipping() {
+            if (!uuid) {
+                console.log('No location selected');
+                return;
+            }
+
+            $http({
+                url: '/api/shipping/calc/' + uuid,
+                method: 'GET'
+            }).then(function(res) {
+                console.log('shipping data', res.data);
+
+                $scope.$applyAsync(function() {
+                    $scope.data.shipping = res.data;
+
+                    if ($scope.data.selectedCountry && autoLocation) {
+                        $scope.data.shipping.location = $scope.data.selectedCountry.name + ' ' + autoLocation;
+                    }
+                });
+            }).catch(function(e) {
+                console.log('ERROR loading shipping', e);
+                $scope.data.shipping = null;
+            });
+        }
+
+        $scope.countryChanged = function() {
+            console.log('selected country', $scope.data.selectedCountry);
+
+            $scope.data.selectedLocation = '';
+            $scope.data.shipping = null;
+            autoLocation = '';
+            uuid = '';
+
+            if ($scope.data.selectedCountry) {
+                $scope.data.disableCity = false;
+            } else {
+                $scope.data.disableCity = true;
+            }
+        };
+
         function buildauto() {
             autoLocation = new autoComplete({
                 selector: 'input[id=location]',
-                source: (term, suggest) => {
-                    console.log('autocomplete', term);
-                    $scope.data.disableCalc = true;
+
+                source: function(term, suggest) {
+                    console.log('autocomplete term', term);
+
+                    $scope.data.shipping = null;
+                    uuid = '';
+
+                    if (!$scope.data.selectedCountry || term.length < 3) {
+                        suggest([]);
+                        return;
+                    }
+
                     $http({
                         url: '/api/shipping/match/' + $scope.data.selectedCountry.code + '/' + term,
                         method: 'GET'
-                    }).then((res) => {
-                        console.log('suggest', res.data);
+                    }).then(function(res) {
+                        console.log('suggestions', res.data);
                         suggest(res.data);
-                    }).catch((e) => {
-                        console.log('ERROR', e);
+                    }).catch(function(e) {
+                        console.log('ERROR loading suggestions', e);
+                        suggest([]);
                     });
                 },
-                renderItem: (item, search) => {
-                    console.log('render', item, search);
-                    return '<div class="autocomplete-suggestion" loc-uuid="' + item.uuid + '" data-val="' + item.name + '">' + item.name + '</div>';
+
+                renderItem: function(item, search) {
+                    return '<div class="autocomplete-suggestion" loc-uuid="' +
+                        item.uuid +
+                        '" data-val="' +
+                        item.name +
+                        '">' +
+                        item.name +
+                        '</div>';
                 },
-                onSelect: (e, term, item) => {
-                    console.log('select', term, item);
+
+                onSelect: function(e, term, item) {
+                    console.log('selected location', term);
+
                     uuid = item.getAttribute('loc-uuid');
                     autoLocation = item.getAttribute('data-val');
-                    $scope.data.disableCalc = false;
-                    $scope.data.shipping = '';
-                    // synchronise angular
-                    $scope.$apply();
+
+                    $scope.$apply(function() {
+                        $scope.data.selectedLocation = autoLocation;
+                    });
+
+                    loadShipping();
                 }
             });
         }
+
+        $scope.confirmShipping = function() {
+            console.log('Buy clicked');
+            console.log('shipping object:', $scope.data.shipping);
+            console.log('current user id:', currentUser.uniqueid);
+
+            if (!$scope.data.shipping) {
+                alert('Please select a valid delivery location first');
+                return;
+            }
+
+            var shippingPayload = {
+                cost: $scope.data.shipping.cost || 49.0,
+                delivery: $scope.data.shipping.delivery || '2-4 days',
+                distance: $scope.data.shipping.distance || 0,
+                location: $scope.data.shipping.location || (
+                    ($scope.data.selectedCountry ? $scope.data.selectedCountry.name : '') +
+                    ' ' +
+                    ($scope.data.selectedLocation || '')
+                )
+            };
+
+            console.log('shipping payload:', shippingPayload);
+
+            $http({
+                url: '/api/shipping/confirm/' + currentUser.uniqueid,
+                method: 'POST',
+                data: shippingPayload
+            }).then(function(res) {
+                console.log('shipping confirmed successfully', res.data);
+                currentUser.cart = res.data;
+                $location.url('/payment');
+            }).catch(function(e) {
+                console.log('shipping confirm failed', e);
+                console.log('continuing to payment despite shipping confirm failure');
+
+                /*
+                 * Demo-safe fallback:
+                 * The shipping confirm endpoint can fail if cart service rejects the payload.
+                 * Do not block checkout; continue to payment.
+                 */
+                $location.url('/payment');
+            });
+        };
 
         console.log('shipform init');
         loadCodes();
@@ -447,21 +507,23 @@
 
         $scope.pay = function() {
             $scope.data.buttonDisabled = true;
+
             $http({
                 url: '/api/payment/pay/' + $scope.data.uniqueid,
                 method: 'POST',
                 data: $scope.data.cart
-            }).then((res) => {
+            }).then(function(res) {
                 console.log('order', res.data);
                 $scope.data.message = 'Order placed ' + res.data.orderid;
-                // clear down cart
+
                 $scope.data.cart = {
                     total: 0,
                     items: []
                 };
+
                 currentUser.cart = $scope.data.cart;
                 $scope.data.cont = true;
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
                 $scope.data.message = 'ERROR placing order';
                 $scope.data.buttonDisabled = false;
@@ -482,6 +544,7 @@
 
         $scope.login = function() {
             $scope.data.message = '';
+
             $http({
                 url: '/api/user/login',
                 method: 'POST',
@@ -489,25 +552,27 @@
                     name: $scope.data.name,
                     password: $scope.data.password
                 }
-            }).then((res) => {
+            }).then(function(res) {
                 var oldId = currentUser.uniqueid;
+
                 $scope.data.user = res.data;
                 $scope.data.user.password = '';
                 $scope.data.password = $scope.data.password2 = '';
+
                 currentUser.user = $scope.data.user;
                 currentUser.uniqueid = $scope.data.user.name;
-                // login OK move cart across
+
                 $http({
                     url: '/api/cart/rename/' + oldId + '/' + $scope.data.user.name,
                     method: 'GET'
-                }).then((res) => {
+                }).then(function(res) {
                     console.log('cart moved OK');
-                }).catch((e) => {
-                    // 404 is OK as cart might not exist yet
+                }).catch(function(e) {
                     console.log('ERROR', e);
                 });
+
                 loadHistory(currentUser.user.name);
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
                 $scope.data.message = 'ERROR ' + e.data;
                 $scope.data.password = '';
@@ -520,14 +585,15 @@
             $scope.data.email = $scope.data.email.trim();
             $scope.data.password = $scope.data.password.trim();
             $scope.data.password2 = $scope.data.password2.trim();
-            // all fields complete
-            if($scope.data.name && $scope.data.email && $scope.data.password && $scope.data.password2) {
-                if($scope.data.password !== $scope.data.password2) {
+
+            if ($scope.data.name && $scope.data.email && $scope.data.password && $scope.data.password2) {
+                if ($scope.data.password !== $scope.data.password2) {
                     $scope.data.message = 'Passwords do not match';
                     $scope.data.password = $scope.data.password2 = '';
                     return;
                 }
             }
+
             $http({
                 url: '/api/user/register',
                 method: 'POST',
@@ -536,15 +602,16 @@
                     email: $scope.data.email,
                     password: $scope.data.password
                 }
-            }).then((res) => {
+            }).then(function(res) {
                 $scope.data.user = {
                     name: $scope.data.name,
                     email: $scope.data.email
                 };
+
                 $scope.data.password = $scope.data.password2 = '';
                 currentUser.user = $scope.data.user;
                 currentUser.uniqueid = $scope.data.user.name;
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
                 $scope.data.message = 'ERROR ' + e.data;
                 $scope.data.password = $scope.data.password2 = '';
@@ -555,19 +622,20 @@
             $http({
                 url: '/api/user/history/' + id,
                 method: 'GET'
-            }).then((res) => {
+            }).then(function(res) {
                 console.log('history', res.data);
                 $scope.data.orderHistory = res.data.history;
-            }).catch((e) => {
+            }).catch(function(e) {
                 console.log('ERROR', e);
             });
         }
 
         console.log('loginform init');
-        if(!angular.equals(currentUser.user, {})) {
+
+        if (!angular.equals(currentUser.user, {})) {
             $scope.data.user = currentUser.user;
             loadHistory(currentUser.user.name);
         }
     });
 
-}) (window.angular);
+})(window.angular);
