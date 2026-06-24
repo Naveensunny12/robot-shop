@@ -1,68 +1,149 @@
-<!-- login / register -->
-<div>
-    <div class="message">
-        {{ data.message }}
+<!-- Modern Login / Register -->
+
+<div class="auth-wrapper">
+
+
+<div class="auth-header">
+    <h1>Welcome to SkyNetOps</h1>
+    <p>Manage your orders, products and shopping experience</p>
+</div>
+
+<div class="message">
+    {{ data.message }}
+</div>
+
+<div ng-if="data.user.name === undefined">
+
+    <div class="auth-grid">
+
+        <!-- Login Card -->
+        <div class="auth-card login-card">
+
+            <h2>Login</h2>
+
+            <div class="form-group">
+                <label>Username</label>
+                <input
+                    type="text"
+                    ng-model="data.name"
+                    placeholder="Enter username">
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input
+                    type="password"
+                    ng-model="data.password"
+                    placeholder="Enter password">
+            </div>
+
+            <button
+                class="primary-btn"
+                ng-click="login();">
+
+                Login
+
+            </button>
+
+        </div>
+
+        <!-- Register Card -->
+        <div class="auth-card register-card">
+
+            <h2>Create Account</h2>
+
+            <div class="form-group">
+                <label>Name</label>
+                <input
+                    type="text"
+                    ng-model="data.name"
+                    placeholder="Full Name">
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input
+                    type="email"
+                    ng-model="data.email"
+                    placeholder="Email Address">
+            </div>
+
+            <div class="form-group">
+                <label>Password</label>
+                <input
+                    type="password"
+                    ng-model="data.password"
+                    placeholder="Password">
+            </div>
+
+            <div class="form-group">
+                <label>Confirm Password</label>
+                <input
+                    type="password"
+                    ng-model="data.password2"
+                    placeholder="Confirm Password">
+            </div>
+
+            <button
+                class="primary-btn"
+                ng-click="register();">
+
+                Register
+
+            </button>
+
+        </div>
+
     </div>
 
-    <div ng-if="data.user.name === undefined">
-        <table class="credentials">
-            <tr>
-                <td>Name</td>
-                <td><input type="text" size="20" ng-model="data.name"/></td>
-            </tr>
-            <tr>
-                <td>Password</td>
-                <td><input type="password" size="20" ng-model="data.password"/></td>
-            </tr>
-            <tr>
-                <td colspan="2" class="centre"><button ng-click="login();">Login</button></td>
-            </tr>
-        </table>
+</div>
 
-        <table class="credentials">
-            <tr>
-                <td>Name</td>
-                <td><input type="text" size="20" ng-model="data.name"/></td>
-            </tr>
-            <tr>
-                <td>Email</td>
-                <td><input type="email" size="20" ng-model="data.email"/></td>
-            </tr>
-            <tr>
-                <td>Password</td>
-                <td><input type="password" size="20" ng-model="data.password"/></td>
-            </tr>
-            <tr>
-                <td>Confirm Password</td>
-                <td><input type="password" size="20" ng-model="data.password2"/></td>
-            </tr>
-            <tr>
-                <td colspan="2" class="centre"><button ng-click="register();">Register</button></td>
-            </tr>
-        </table>
+<div ng-if="data.user.name !== undefined">
+
+    <div class="profile-card">
+
+        <h2>Hello, {{ data.user.name }} 👋</h2>
+
+        <p>{{ data.user.email }}</p>
+
     </div>
 
-    <div ng-if="data.user.name !== undefined">
-        <h3>Greetings {{ data.user.name }}</h3>
-        <p>Email - {{ data.user.email }}</p>
-        <h3>Order History</h3>
-        <table>
-            <tr>
-                <th>Order ID</th>
-                <th>Items</th>
-                <th>Total</th>
-            </tr>
-            <tr ng-repeat="hist in data.orderHistory">
-                <td>{{ hist.orderid }}</td>
-                <td>
-                    <ul>
-                        <li ng-repeat="item in hist.cart.items">{{ item.name }}</li>
-                    </ul>
-                </td>
-                <td>
-                    &euro;{{ hist.cart.total }}
-                </td>
-            </tr>
-        </table>
+    <div class="orders-section">
+
+        <h2>Order History</h2>
+
+        <div
+            class="order-card"
+            ng-repeat="hist in data.orderHistory">
+
+            <div class="order-header">
+
+                <span>
+                    Order #{{ hist.orderid }}
+                </span>
+
+                <span>
+                    €{{ hist.cart.total }}
+                </span>
+
+            </div>
+
+            <ul>
+
+                <li
+                    ng-repeat="item in hist.cart.items">
+
+                    {{ item.name }}
+
+                </li>
+
+            </ul>
+
+        </div>
+
     </div>
+
+</div>
+
+
 </div>

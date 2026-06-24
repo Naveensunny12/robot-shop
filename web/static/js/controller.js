@@ -38,7 +38,8 @@
             templateUrl: 'payment.html',
             controller: 'paymentform'
         }).when('/404', {
-            templateUrl: '404.html'
+            templateUrl: '404.html',
+            controller: 'notfoundform'
         }).otherwise({
             redirectTo: '/'
         });
@@ -66,6 +67,7 @@
         $scope.data.categories = [];
         $scope.data.products = {};
         $scope.data.searchText = '';
+        $scope.data.selectedCategory = 'Home';
 
         $scope.data.cart = {
             total: 0
@@ -84,6 +86,21 @@
                     console.log('ERROR', e);
                 });
             }
+        };
+
+        /*
+         * Added for new left sidebar UI.
+         * This keeps selected category highlighted.
+         */
+        $scope.selectCategory = function(cat) {
+            $scope.data.selectedCategory = cat;
+
+            if (cat === 'Home') {
+                $location.url('/');
+                return;
+            }
+
+            $scope.getProducts(cat);
         };
 
         $scope.search = function() {
@@ -124,6 +141,7 @@
 
         if (!currentUser.uniqueid) {
             console.log('generating uniqueid');
+
             getUniqueid().then(function(id) {
                 $scope.data.uniqueid = id;
                 currentUser.uniqueid = id;
@@ -147,7 +165,12 @@
                 if (typeof ineum !== 'undefined') {
                     if (!currentUser.uniqueid.startsWith('anonymous')) {
                         console.log('Setting user details', currentUser);
-                        ineum('user', currentUser.uniqueid, currentUser.user.name, currentUser.user.email);
+                        ineum(
+                            'user',
+                            currentUser.uniqueid,
+                            currentUser.user.name,
+                            currentUser.user.email
+                        );
                     }
                 }
             }
@@ -194,8 +217,21 @@
         $scope.data.quantity = 1;
 
         $scope.addToCart = function() {
-            var url = '/api/cart/add/' + currentUser.uniqueid + '/' + $scope.data.product.sku + '/' + $scope.data.quantity;
+            var sku = $scope.data.product.sku;
+            var url = '/api/cart/add/' + currentUser.uniqueid + '/' + sku + '/' + $scope.data.quantity;
+
             console.log('addToCart', url);
+
+            /*
+             * Controlled failure scenario:
+             * Product should load normally with image/details.
+             * If SKU is HPTD, Add to Cart redirects to custom 404 page.
+             */
+            if (sku === 'HPTD') {
+                console.log('Controlled Add to Cart failure for SKU:', sku);
+                $location.url('/404');
+                return;
+            }
 
             $http({
                 url: url,
@@ -206,7 +242,14 @@
                 $scope.data.message = 'Added to cart';
                 $timeout(clearMessage, 3000);
             }).catch(function(e) {
-                console.log('ERROR', e);
+                console.log('ADD TO CART ERROR:', e);
+
+                if (e.status === 404) {
+                    console.log('Cart service returned 404. Redirecting to /404.');
+                    $location.url('/404');
+                    return;
+                }
+
                 $scope.data.message = 'ERROR ' + e;
                 $timeout(clearMessage, 3000);
             });
@@ -214,7 +257,11 @@
 
         $scope.rateProduct = function(score) {
             console.log('rate product', $scope.data.product.sku, score);
-            var url = '/api/ratings/api/rate/' + $scope.data.product.sku + '/' + score;
+
+            var url = '/api/ratings/api/rate/' +
+                $scope.data.product.sku +
+                '/' +
+                score;
 
             $http({
                 url: url,
@@ -230,6 +277,7 @@
 
         $scope.glowstan = function(vote, val) {
             console.log('glowstan', vote);
+
             var idx = vote;
 
             while (idx > 0) {
@@ -290,7 +338,13 @@
         };
 
         $scope.change = function(sku, qty) {
-            var url = '/api/cart/update/' + $scope.data.uniqueid + '/' + sku + '/' + qty;
+            var url = '/api/cart/update/' +
+                $scope.data.uniqueid +
+                '/' +
+                sku +
+                '/' +
+                qty;
+
             console.log('change', url);
 
             $http({
@@ -311,7 +365,11 @@
             }).then(function(res) {
                 var cart = res.data;
 
-                if (cart.items[cart.items.length - 1].sku == 'SHIP') {
+                if (
+                    cart.items &&
+                    cart.items.length > 0 &&
+                    cart.items[cart.items.length - 1].sku == 'SHIP'
+                ) {
                     $http({
                         url: '/api/cart/update/' + id + '/SHIP/0',
                         method: 'GET'
@@ -372,7 +430,10 @@
                     $scope.data.shipping = res.data;
 
                     if ($scope.data.selectedCountry && autoLocation) {
-                        $scope.data.shipping.location = $scope.data.selectedCountry.name + ' ' + autoLocation;
+                        $scope.data.shipping.location =
+                            $scope.data.selectedCountry.name +
+                            ' ' +
+                            autoLocation;
                     }
                 });
             }).catch(function(e) {
@@ -412,7 +473,10 @@
                     }
 
                     $http({
-                        url: '/api/shipping/match/' + $scope.data.selectedCountry.code + '/' + term,
+                        url: '/api/shipping/match/' +
+                            $scope.data.selectedCountry.code +
+                            '/' +
+                            term,
                         method: 'GET'
                     }).then(function(res) {
                         console.log('suggestions', res.data);
@@ -485,8 +549,7 @@
 
                 /*
                  * Demo-safe fallback:
-                 * The shipping confirm endpoint can fail if cart service rejects the payload.
-                 * Do not block checkout; continue to payment.
+                 * Do not block checkout if shipping confirmation fails.
                  */
                 $location.url('/payment');
             });
@@ -557,7 +620,8 @@
 
                 $scope.data.user = res.data;
                 $scope.data.user.password = '';
-                $scope.data.password = $scope.data.password2 = '';
+                $scope.data.password = '';
+                $scope.data.password2 = '';
 
                 currentUser.user = $scope.data.user;
                 currentUser.uniqueid = $scope.data.user.name;
@@ -586,10 +650,16 @@
             $scope.data.password = $scope.data.password.trim();
             $scope.data.password2 = $scope.data.password2.trim();
 
-            if ($scope.data.name && $scope.data.email && $scope.data.password && $scope.data.password2) {
+            if (
+                $scope.data.name &&
+                $scope.data.email &&
+                $scope.data.password &&
+                $scope.data.password2
+            ) {
                 if ($scope.data.password !== $scope.data.password2) {
                     $scope.data.message = 'Passwords do not match';
-                    $scope.data.password = $scope.data.password2 = '';
+                    $scope.data.password = '';
+                    $scope.data.password2 = '';
                     return;
                 }
             }
@@ -608,13 +678,15 @@
                     email: $scope.data.email
                 };
 
-                $scope.data.password = $scope.data.password2 = '';
+                $scope.data.password = '';
+                $scope.data.password2 = '';
                 currentUser.user = $scope.data.user;
                 currentUser.uniqueid = $scope.data.user.name;
             }).catch(function(e) {
                 console.log('ERROR', e);
                 $scope.data.message = 'ERROR ' + e.data;
-                $scope.data.password = $scope.data.password2 = '';
+                $scope.data.password = '';
+                $scope.data.password2 = '';
             });
         };
 
@@ -636,6 +708,17 @@
             $scope.data.user = currentUser.user;
             loadHistory(currentUser.user.name);
         }
+    });
+
+    robotshop.controller('notfoundform', function($scope, $location) {
+        $scope.data = {};
+        $scope.data.product = {
+            sku: 'HPTD'
+        };
+
+        $scope.goHome = function() {
+            $location.url('/');
+        };
     });
 
 })(window.angular);

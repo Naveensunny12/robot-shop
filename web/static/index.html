@@ -1,103 +1,220 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <!--# include file="eum.html" -->
-    <title>SkyNetOps Robot Shop</title>
 
-    <link rel="shortcut icon" type="image/png" href="/media/instana_icon_square.png"/>
+```
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-Cache">
+<meta http-equiv="Pragma" content="no-cache">
 
-    <style type="text/css">
-        @import url('https://fonts.googleapis.com/css?family=Orbitron');
-        @import url('/css/style.css');
-        @import url('/css/auto-complete.css');
-    </style>
+<title>SkyNetOps Commerce Platform</title>
 
-    <meta http-equiv="Cache-Control" content="no-Cache">
-    <meta http-equiv="Pragma" content="no-cache">
+<link rel="shortcut icon" type="image/png" href="/media/instana_icon_square.png"/>
+
+<style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('/css/style.css');
+    @import url('/css/auto-complete.css');
+</style>
+
+
 </head>
 
 <body ng-app="robotshop">
 
-<div ng-controller="shopform">
+<div ng-controller="shopform" class="app-container">
 
-    <!-- ✅ UPDATED BRAND NAME -->
-    <h1>
-        <a href="/">SkyNetOps Robot Shop</a>
-    </h1>
 
-    <span id="stan">
-        <img src="/media/stan.png"/>
-    </span>
+<!-- Sidebar -->
+        <aside class="sidebar">
 
-    <span id="search">
-        <form>
-            <input type="text" size="20" ng-model="data.searchText"/>
-            <button ng-click="search();">Search</button>
-        </form>
-    </span>
-
-    <div class="row">
-
-        <!-- left nav -->
-        <div class="nav column">
-
-            <h3><a href="login">Login / Register</a></h3>
-            <h3><a href="cart">Cart</a></h3>
-
-            <div ng-if="data.cart.total == 0" class="carttotal">
-                Empty
+            <div class="logo">
+                <h2>SkyNetOps</h2>
+                <span>Commerce Platform</span>
             </div>
 
-            <div ng-if="data.cart.total != 0" class="carttotal">
-                &euro;{{ data.cart.total.toFixed(2) }}
-            </div>
+            <ul class="sidebar-menu">
 
-            <h3>Categories</h3>
+                <li>
+                    <a href="/">🏠 Home</a>
+                </li>
+                <li class="menu-group">
 
-            <ul class="products">
-                <li ng-repeat="cat in data.categories">
+                    <div
+                        class="menu-title"
+                        ng-click="showCategories = !showCategories">
 
-                    <span ng-click="getProducts(cat);" class="category">
-                        {{ cat }}
-                    </span>
+                        📂 Categories
 
-                    <ul ng-if="data.products[cat]">
-                        <li ng-repeat="prod in data.products[cat]">
-                            <a class="product" href="product/{{ prod.sku }}">
-                                {{ prod.name }}
-                            </a>
+                    </div>
+
+                    <ul
+                        class="submenu"
+                        ng-show="showCategories">
+
+                        <li
+                            ng-repeat="cat in data.categories">
+
+                            <div
+                                class="submenu-category"
+                                ng-click="getProducts(cat)">
+
+                                {{ cat }}
+
+                            </div>
+
+                            <ul
+                                class="product-submenu"
+                                ng-if="data.products[cat]">
+
+                                <li
+                                    ng-repeat="prod in data.products[cat]">
+
+                                    <a
+                                        href="product/{{ prod.sku }}">
+
+                                        {{ prod.name }}
+
+                                    </a>
+
+                                </li>
+
+                            </ul>
+
                         </li>
+
                     </ul>
 
                 </li>
-            </ul>
+
+        <li>
+            <a href="cart">🛒 Cart</a>
+        </li>
+
+    </ul>
+
+    <div class="sidebar-footer">
+
+
+    <div class="cart-summary">
+
+        <h4>🛒 Cart Total</h4>
+
+        <div
+            ng-if="data.cart.total == 0"
+            class="cart-empty">
+
+            0
 
         </div>
 
-        <!-- main display area -->
-        <div class="main column">
-            <div ng-view></div>
+        <div
+            ng-if="data.cart.total != 0"
+            class="cart-price">
+
+            €{{ data.cart.total.toFixed(2) }}
+
         </div>
+
+    </div>
+   
+
+    </div>
+
+
+    
+
+</aside>
+
+<!-- Main Content -->
+<main class="content">
+
+    <!-- Navbar -->
+    <nav class="topbar">
+
+        <div class="top-left">
+
+            <form style="display:flex;gap:10px;align-items:center;">
+
+                <input
+                    type="text"
+                    placeholder="Search products..."
+                    ng-model="data.searchText">
+
+                <button
+                    type="button"
+                    ng-click="search();">
+
+                    Search
+
+                </button>
+
+            </form>
+
+        </div>
+
+        <div class="top-right">
+
+            <div ng-if="data.user.name === undefined">
+                <a href="login" class="login-btn">
+                    Login
+                </a>
+            </div>
+
+            <div ng-if="data.user.name !== undefined">
+
+                <span class="user-name">
+                    {{ data.user.name }}
+                </span>
+
+                <button
+                    class="logout-btn"
+                    ng-click="logout();">
+
+                    Logout
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </nav>
+
+    <!-- Dynamic Angular View -->
+    <div class="page-content">
+
+        <div ng-view></div>
 
     </div>
 
     <div class="footer">
-        {{ data.uniqueid }}
+    © 2026 SkyNetOps Commerce Platform
     </div>
+
+</main>
+
 
 </div>
 
-<!-- JavaScript -->
+<!-- AngularJS -->
+
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular.js"></script>
+
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular-route.js"></script>
+
 <script src="/js/auto-complete.js"></script>
+
 <script src="/js/controller.js"></script>
 
 <script type="text/javascript">
-    angular.element(document.getElementsByTagName('head'))
-        .append(
-            angular.element('<base href="' + window.location.pathname + '" />')
-        );
+angular.element(document.getElementsByTagName('head')).append(
+    angular.element(
+        '<base href="' + window.location.pathname + '" />'
+    )
+);
 </script>
 
 </body>

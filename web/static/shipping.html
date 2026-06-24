@@ -1,28 +1,102 @@
-<h3>Shipping Details</h3>
+<!-- Modern Shipping Page -->
 
-<div>
-    Country
-    <select ng-model="data.selectedCountry"
-            ng-change="countryChanged()"
+<div class="shipping-page">
+
+
+<div class="shipping-header">
+
+    <h1>🚚 Shipping Information</h1>
+
+    <p>
+        Select your delivery location and calculate shipping charges.
+    </p>
+
+</div>
+
+<div class="shipping-card">
+
+    <div class="form-group">
+
+        <label>
+            🌍 Select Country
+        </label>
+
+        <select
+            ng-change="countryChanged();"
+            ng-model="data.selectedCountry"
             ng-options="opt.name for opt in data.countries track by opt.code">
-    </select>
-</div>
 
-<div>
-    Enter Location
-    <input id="location"
-           type="text"
-           size="25"
-           ng-model="data.selectedLocation"
-           ng-disabled="data.disableCity"
-           placeholder="Type at least 3 letters">
-</div>
+        </select>
 
-<div ng-if="data.shipping">
-    <div>Delivery: {{ data.shipping.delivery }}</div>
-    <div>Shipping Cost: ₹{{ data.shipping.cost }}</div>
+    </div>
 
-    <button ng-click="confirmShipping()">
-        Buy
+    <div class="form-group">
+
+        <label>
+            📍 Delivery Location
+        </label>
+
+        <input
+            id="location"
+            type="text"
+            placeholder="Enter city or location"
+            ng-model="data.selectedLocation"
+            ng-disabled="data.disableCity">
+
+    </div>
+
+    <button
+        class="shipping-btn"
+        ng-click="calcShipping();"
+        ng-disabled="data.disableCalc">
+
+        Calculate Shipping
+
     </button>
+
+</div>
+
+<div
+    ng-if="data.shipping"
+    class="shipping-result">
+
+    <div class="result-header">
+
+        <h2>
+            Shipping Estimate
+        </h2>
+
+    </div>
+
+    <div class="result-grid">
+
+        
+
+        <div class="result-card">
+
+            <div class="result-icon">
+                💰
+            </div>
+
+            <h3>Shipping Cost</h3>
+
+            <p>
+                €{{ data.shipping.cost.toFixed(2) }}
+            </p>
+
+        </div>
+
+    </div>
+
+    <button
+        class="confirm-btn"
+        ng-click="confirmShipping();">
+
+        Continue To Payment
+
+    </button>
+
+</div>
+
+
 </div>
