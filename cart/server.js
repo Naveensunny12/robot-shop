@@ -323,7 +323,7 @@ app.post('/shipping/:id', (req, res) => {
     if (
         shipping.distance === undefined ||
         shipping.cost === undefined ||
-        shipping.location == undefined
+        shipping.location === undefined
     ) {
         req.log.warn('shipping data missing', shipping);
         res.status(400).send('shipping data missing');
