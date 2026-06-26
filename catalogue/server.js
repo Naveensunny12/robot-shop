@@ -1,4 +1,5 @@
 const instana = require('@instana/collector');
+
 // init tracing
 // MUST be done before loading anything else!
 instana({
@@ -19,6 +20,7 @@ const logger = pino({
     prettyPrint: false,
     useLevelLabels: true
 });
+
 const expLogger = expPino({
     logger: logger
 });
@@ -46,8 +48,15 @@ app.use((req, res, next) => {
         "us-east1",
         "us-west1"
     ];
+
     let span = instana.currentSpan();
-    span.annotate('custom.sdk.tags.datacenter', dcs[Math.floor(Math.random() * dcs.length)]);
+
+    if (span) {
+        span.annotate(
+            'custom.sdk.tags.datacenter',
+            dcs[Math.floor(Math.random() * dcs.length)]
+        );
+    }
 
     next();
 });
@@ -60,12 +69,13 @@ app.get('/health', (req, res) => {
         app: 'OK',
         mongo: mongoConnected
     };
+
     res.json(stat);
 });
 
 // all products
 app.get('/products', (req, res) => {
-    if(mongoConnected) {
+    if (mongoConnected) {
         collection.find({}).toArray().then((products) => {
             res.json(products);
         }).catch((e) => {
@@ -74,7 +84,7 @@ app.get('/products', (req, res) => {
         });
     } else {
         req.log.error('database not available');
-        res.status(500).send('database not avaiable');
+        res.status(500).send('database not available');
     }
 });
 
@@ -89,12 +99,12 @@ app.get('/product/:sku', (req, res) => {
 
             const sku = req.params.sku;
 
-            // ✅ ONLY THIS PRODUCT WILL FAIL
-            if (sku === "HPTD") {
-                console.log("Simulated 404 for product:", sku);
-                return res.status(404).send("404 - Product Not Found (Simulated)");
-            }
-
+            /*
+             * IMPORTANT:
+             * Do NOT return 404 here for HPTD.
+             * Product page should load normally with image/details.
+             * Add-to-cart failure should be handled by cart service or frontend.
+             */
             collection.findOne({ sku: sku }).then((product) => {
                 req.log.info('product', product);
 
@@ -117,12 +127,15 @@ app.get('/product/:sku', (req, res) => {
     }
 });
 
-
 // products in a category
 app.get('/products/:cat', (req, res) => {
-    if(mongoConnected) {
-        collection.find({ categories: req.params.cat }).sort({ name: 1 }).toArray().then((products) => {
-            if(products) {
+    if (mongoConnected) {
+        collection.find({
+            categories: req.params.cat
+        }).sort({
+            name: 1
+        }).toArray().then((products) => {
+            if (products) {
                 res.json(products);
             } else {
                 res.status(404).send('No products for ' + req.params.cat);
@@ -133,13 +146,13 @@ app.get('/products/:cat', (req, res) => {
         });
     } else {
         req.log.error('database not available');
-        res.status(500).send('database not avaiable');
+        res.status(500).send('database not available');
     }
 });
 
 // all categories
 app.get('/categories', (req, res) => {
-    if(mongoConnected) {
+    if (mongoConnected) {
         collection.distinct('categories').then((categories) => {
             res.json(categories);
         }).catch((e) => {
@@ -154,8 +167,12 @@ app.get('/categories', (req, res) => {
 
 // search name and description
 app.get('/search/:text', (req, res) => {
-    if(mongoConnected) {
-        collection.find({ '$text': { '$search': req.params.text }}).toArray().then((hits) => {
+    if (mongoConnected) {
+        collection.find({
+            '$text': {
+                '$search': req.params.text
+            }
+        }).toArray().then((hits) => {
             res.json(hits);
         }).catch((e) => {
             req.log.error('ERROR', e);
@@ -171,8 +188,9 @@ app.get('/search/:text', (req, res) => {
 function mongoConnect() {
     return new Promise((resolve, reject) => {
         var mongoURL = process.env.MONGO_URL || 'mongodb://mongodb:27017/catalogue';
+
         mongoClient.connect(mongoURL, (error, client) => {
-            if(error) {
+            if (error) {
                 reject(error);
             } else {
                 db = client.db('catalogue');
@@ -198,6 +216,7 @@ mongoLoop();
 
 // fire it up!
 const port = process.env.CATALOGUE_SERVER_PORT || '8080';
+
 app.listen(port, () => {
     logger.info('Started on port', port);
 });

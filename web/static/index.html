@@ -95,10 +95,12 @@
 
     </ul>
 
-    <div class="sidebar-footer">
+    <!-- <div class="sidebar-footer">
 
 
-    <div class="cart-summary">
+        <div
+        class="cart-summary"
+        ng-if="currentUser.user && currentUser.user.name">
 
         <h4>🛒 Cart Total</h4>
 
@@ -106,7 +108,7 @@
             ng-if="data.cart.total == 0"
             class="cart-empty">
 
-            0
+            €0.00
 
         </div>
 
@@ -119,9 +121,21 @@
         </div>
 
     </div>
-   
+
+    <div
+        class="cart-summary"
+        ng-if="!currentUser.user || !currentUser.user.name">
+
+        <h4>🛒 Cart</h4>
+
+        <div class="cart-empty">
+            Login to view cart
+        </div>
 
     </div>
+   
+
+    </div> -->
 
 
     
@@ -156,22 +170,31 @@
         </div>
 
         <div class="top-right">
+            
+            <a
+                ng-if="!currentUser.user.name"
+                href="login"
+                class="login-btn">
 
-            <div ng-if="data.user.name === undefined">
-                <a href="login" class="login-btn">
-                    Login
-                </a>
-            </div>
+                Login
 
-            <div ng-if="data.user.name !== undefined">
+            </a>
+
+            <div
+                ng-if="currentUser.user.name"
+                class="user-actions">
 
                 <span class="user-name">
-                    {{ data.user.name }}
+                    👤 {{ currentUser.user.name }}
                 </span>
+
+                <a href="login" class="orders-btn">
+                    My Orders
+                </a>
 
                 <button
                     class="logout-btn"
-                    ng-click="logout();">
+                    ng-click="logout()">
 
                     Logout
 
